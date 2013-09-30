@@ -939,14 +939,12 @@ class Emitter extends \xp\compiler\emit\Emitter {
     // Else
     if ($if->otherwise) {
       $this->emitAll($b, (array)$if->otherwise->statements);
-      $b->append("\n");
       $b->append('goto l')->append($if->otherwise->hashCode())->append("\n");
     }
 
     // Condition
     $b->append('l')->append($if->condition->hashCode())->append(":\n");
     $this->emitAll($b, (array)$if->statements);
-    $b->append("\n");
 
     // End
     $b->append('l')->append($if->otherwise->hashCode())->append(":\n");
@@ -1597,10 +1595,9 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     $b->append('([Ljava/lang/String;)V')->append("\n");
 
-    $b->append('
-      .limit stack 6
-      .limit locals 1
-    ');
+    $b->append(".limit stack 6\n");
+    $b->append(".limit locals 1\n");
+    $b->append("\n");
 
     $this->emitAll($b, $method->body);
 
@@ -1611,7 +1608,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     array_shift($this->method);
 
-    $b->append("\n")->append('return')->append("\n");
+    $b->append('return')->append("\n");
     $b->append('.end method')->append("\n");
     $this->leave();
     
@@ -2445,7 +2442,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
   protected function emitAll($b, array $nodes) {
     foreach ($nodes as $node) {
       $this->emitOne($b, $node);
-      $b->append(';');
+      $b->append("\n");
     }
   }
 
