@@ -66,7 +66,17 @@ class Emitter extends \xp\compiler\emit\Emitter {
   protected function tempVar() {
     return '$T'.($this->temp[0]++);
   }
-  
+
+  /**
+   * Returns JAVA type literal for a given type
+   *
+   * @param   xp.compiler.types.Types type
+   * @return  string
+   */
+  protected function javaName($type) {
+    return strtr($type->name(), '.', '/');
+  }
+
   /**
    * Check whether a node is writeable - that is: can be the left-hand
    * side of an assignment
@@ -2208,7 +2218,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
     
     $this->enter(new TypeDeclarationScope());
     // $this->emitTypeName($b, 'class', $declaration);
-    $b->append('.class ')->append($thisType->name())->append("\n");
+    $b->append('.class ')->append($this->javaName($thisType))->append("\n");
     //$b->append(' extends '.$parentType->literal(true));
     $b->append('.super java/lang/Object')->append("\n");
     array_unshift($this->metadata, array(array(), array()));
