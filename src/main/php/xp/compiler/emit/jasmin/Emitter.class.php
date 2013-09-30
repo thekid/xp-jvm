@@ -330,7 +330,11 @@ class Emitter extends \xp\compiler\emit\Emitter {
    * @param   xp.compiler.ast.VariableNode var
    */
   protected function emitVariable($b, $var) {
-    $b->append('$'.$var->name);
+    $v= $var->hashCode();
+    if (!isset($this->scope[0]->vars[$v])) {
+      $this->scope[0]->vars[$v]= sizeof($this->scope[0]->vars);
+    }
+    $b->append('aload ')->append($this->scope[0]->vars[$v])->append("\n");
   }
 
   /**
@@ -421,6 +425,21 @@ class Emitter extends \xp\compiler\emit\Emitter {
    * @param   xp.compiler.ast.MethodCallNode call
    */
   public function emitMethodCall($b, $call) {
+    $this->emitOne($b, $call->target);
+
+    $ptr= new TypeInstance($this->resolveType($this->scope[0]->typeOf($call->target), false));
+
+    // Parameters
+    $b->append('iconst_1')->append("\n");
+    $b->append('iconst_1')->append("\n");
+
+    $b->append('invokevirtual ')->append($this->javaName($ptr))->append('/')->append($call->name);
+
+    $b->append('(II)');   // XXX Signature
+
+    $b->append('V')->append("\n");
+
+    return;
     $mark= $b->mark();
     $this->emitOne($b, $call->target);
     
@@ -1573,6 +1592,8 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     // Begin
     $this->enter(new MethodScope($method->name));
+    $this->scope[0]->vars= array();
+
     if (!Modifiers::isStatic($method->modifiers)) {
       $this->scope[0]->setType(new VariableNode('this'), $this->scope[0]->declarations[0]->name);
     }
@@ -1603,10 +1624,14 @@ class Emitter extends \xp\compiler\emit\Emitter {
     }
 */
 
-    $b->append('([Ljava/lang/String;)V')->append("\n");
+    if ($method->parameters) {
+      $b->append('([Ljava/lang/String;)V')->append("\n");   // XXX
+    } else {
+      $b->append('()V')->append("\n");
+    }
 
-    $b->append(".limit stack 6\n");
-    $b->append(".limit locals 1\n");
+    $b->append(".limit stack 6\n");   // XXX
+    $b->append(".limit locals 1\n");  // XXX
     $b->append("\n");
 
     $this->emitAll($b, $method->body);
@@ -2217,10 +2242,8 @@ class Emitter extends \xp\compiler\emit\Emitter {
     $this->scope[0]->addResolved('parent', $parentType);
     
     $this->enter(new TypeDeclarationScope());
-    // $this->emitTypeName($b, 'class', $declaration);
     $b->append('.class ')->append($this->javaName($thisType))->append("\n");
-    //$b->append(' extends '.$parentType->literal(true));
-    $b->append('.super java/lang/Object')->append("\n");
+    $b->append('.super ')->append($this->javaName($parentType))->append("\n");
     array_unshift($this->metadata, array(array(), array()));
     $this->metadata[0]['class'][DETAIL_ANNOTATIONS]= array();
     array_unshift($this->properties, array());

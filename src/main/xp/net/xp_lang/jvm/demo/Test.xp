@@ -1,0 +1,12 @@
+package net.xp_lang.jvm.demo;
+
+/**
+ * Unittest demo
+ */
+public class Test extends unittest.TestCase {
+
+  [@Test]
+  public void succeeds() {
+    $this.assertEquals(1, 1);
+  }
+}

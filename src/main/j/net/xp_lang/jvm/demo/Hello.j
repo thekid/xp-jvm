@@ -4,7 +4,7 @@
 
 
 .class net/xp_lang/jvm/demo/Hello
-.super java/lang/Object
+.super lang/Object
 
 
 
@@ -15,7 +15,7 @@
 aload_0
 arraylength
 iconst_0
-if_icmpgt l5249bec6db51c8.06993364
+if_icmpgt l5249c6787dd041.71719702
 iconst_1
 anewarray Ljava/lang/Object;
 dup
@@ -24,8 +24,8 @@ ldc "Hello World"
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-goto l5249bec6dc0d43.85580510
-l5249bec6db51c8.06993364:
+goto l5249c6787e8bc6.00885783
+l5249c6787dd041.71719702:
 iconst_2
 anewarray Ljava/lang/Object;
 dup
@@ -40,7 +40,7 @@ aaload
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-l5249bec6dc0d43.85580510:
+l5249c6787e8bc6.00885783:
 
 return
 .end method
