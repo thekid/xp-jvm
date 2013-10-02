@@ -15,7 +15,7 @@
 aload_0
 arraylength
 iconst_0
-if_icmpgt l5249c6787dd041.71719702
+if_icmpgt l524bc4f357ae41.81632677
 iconst_1
 anewarray Ljava/lang/Object;
 dup
@@ -24,8 +24,8 @@ ldc "Hello World"
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-goto l5249c6787e8bc6.00885783
-l5249c6787dd041.71719702:
+goto l524bc4f359a244.46027686
+l524bc4f357ae41.81632677:
 iconst_2
 anewarray Ljava/lang/Object;
 dup
@@ -40,7 +40,7 @@ aaload
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-l5249c6787e8bc6.00885783:
+l524bc4f359a244.46027686:
 
 return
 .end method
