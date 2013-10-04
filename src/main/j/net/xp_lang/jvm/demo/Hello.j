@@ -19,9 +19,9 @@ comment s = "\nEntry point"
 aload_0
 arraylength
 iconst_0
-if_icmpgt l524e7af90f5e02.63849657
+if_icmpgt l524e7c85576383.28112623
 iconst_1
-anewarray Ljava/lang/Object;
+anewarray java/lang/Object
 dup
 iconst_0
 new lang/XPClass
@@ -32,10 +32,10 @@ invokevirtual lang/XPClass/getComment()Ljava/lang/String;
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-goto l524e7af915f589.83867241
-l524e7af90f5e02.63849657:
+goto l524e7c855e3986.86643409
+l524e7c85576383.28112623:
 iconst_2
-anewarray Ljava/lang/Object;
+anewarray java/lang/Object
 dup
 iconst_0
 ldc "Hello "
@@ -48,12 +48,12 @@ aaload
 aastore
 invokestatic util/cmd/Console/writeLine([Ljava/lang/Object;)V
 
-l524e7af915f589.83867241:
+l524e7c855e3986.86643409:
 
 return
 .stack use locals
-stack Uninitialized l524e7af90f5e02.63849657
-stack Uninitialized l524e7af915f589.83867241
+stack Uninitialized l524e7c85576383.28112623
+stack Uninitialized l524e7c855e3986.86643409
 .end stack
 .end method
 

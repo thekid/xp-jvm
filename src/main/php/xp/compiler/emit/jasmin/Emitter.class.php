@@ -394,7 +394,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     // vararg: Emit array
     $b->append('iconst_')->append(sizeof($call->arguments))->append("\n");
-    $b->append('anewarray Ljava/lang/Object;')->append("\n");
+    $b->append('anewarray java/lang/Object')->append("\n");
     foreach ($call->arguments as $i => $arg) {
       $b->append('dup')->append("\n");
       $b->append('iconst_')->append($i)->append("\n");
