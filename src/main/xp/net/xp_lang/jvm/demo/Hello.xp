@@ -1,7 +1,7 @@
 package net.xp_lang.jvm.demo;
 
 /**
- * Hello World
+ * Usage: Hello [name]
  */
 public class Hello {
 
@@ -12,7 +12,7 @@ public class Hello {
     if ($args.length > 0) {
       util.cmd.Console::writeLine('Hello ', $args[0]);
     } else {
-      util.cmd.Console::writeLine('Hello World');
+      util.cmd.Console::writeLine(self::class.getComment());
     }
   }
 }

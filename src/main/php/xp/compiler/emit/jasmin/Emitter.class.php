@@ -78,6 +78,35 @@ class Emitter extends \xp\compiler\emit\Emitter {
   }
 
   /**
+   * Returns JAVA type literal for a given type
+   *
+   * @param   xp.compiler.types.TypeName type
+   * @return  string
+   */
+  protected function javaType($type) {
+    static $primitives= array(
+      'int'    => 'I',
+      'double' => 'D',
+      'bool'   => 'Z',
+      'string' => 'Ljava/lang/String;'
+    );
+
+    if ($type->isArray()) {
+      return '['.$this->javaType($type->arrayComponentType());
+    } else if ($type->isClass()) {
+      return 'L'.$this->javaName($this->resolveType($type)).';';
+    } else if ($type->isPrimitive()) {
+      return $primitives[$type->name];
+    } else if ($type->isVariable()) {
+      return 'Ljava/lang/Object;';
+    } else if ($type->isVoid()) {
+      return 'V';
+    } else {
+      throw new \lang\IllegalStateException('Cannot convert '.$type->toString().' to Java type');
+    }
+  }
+
+  /**
    * Check whether a node is writeable - that is: can be the left-hand
    * side of an assignment
    *
@@ -121,19 +150,12 @@ class Emitter extends \xp\compiler\emit\Emitter {
    * Emit parameters
    *
    * @param   xp.compiler.emit.Buffer b
-   * @param   xp.compiler.ast.Node[] params
-   * @param   bool brackets
-   * @return  int
+   * @param   xp.compiler.ast.Node[] arguments
    */
-  protected function emitInvocationArguments($b, array $params, $brackets= true) {
-    $brackets && $b->append('(');
-    $s= sizeof($params)- 1;
-    foreach ($params as $i => $param) {
-      $this->emitOne($b, $param);
-      $i < $s && $b->append(',');
+  protected function emitInvocationArguments($b, array $arguments) {
+    foreach ($arguments as $i => $argument) {
+      $this->emitOne($b, $argument);
     }
-    $brackets && $b->append(')');
-    return sizeof($params);
   }
   
   /**
@@ -286,7 +308,15 @@ class Emitter extends \xp\compiler\emit\Emitter {
    * @param   xp.compiler.ast.IntegerNode num
    */
   protected function emitInteger($b, $num) {
-    $b->append($num->resolve());
+    $n= $num->resolve();
+    if (-1 === $n) {
+      $b->append('iconst_m1');
+    } else if ($n < 6 && $n > 0) {
+      $b->append('iconst_')->append($n);
+    } else {
+      $b->append('bipush ')->append($num->resolve());
+    }
+    $b->append("\n");
   }
 
   /**
@@ -429,17 +459,26 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     $ptr= new TypeInstance($this->resolveType($this->scope[0]->typeOf($call->target), false));
 
-    // Parameters
-    $b->append('iconst_1')->append("\n");
-    $b->append('iconst_1')->append("\n");
+    // Arguments
+    $this->emitInvocationArguments($b, (array)$call->arguments, false);
 
+    // Invocation
     $b->append('invokevirtual ')->append($this->javaName($ptr))->append('/')->append($call->name);
-
-    $b->append('(II)');   // XXX Signature
-
-    $b->append('V')->append("\n");
+    if ($ptr->hasMethod($call->name)) {
+      $b->append('(');
+      $method= $ptr->getMethod($call->name);
+      foreach ($method->parameters as $parameter) {
+        $b->append($this->javaType($parameter));
+      }
+      $b->append(')');
+      $b->append($this->javaType($method->returns));
+    } else {
+      $b->append('()V');  // XXX
+    }
+    $b->append("\n");
 
     return;
+    /*
     $mark= $b->mark();
     $this->emitOne($b, $call->target);
     
@@ -486,6 +525,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
       $b->append('->'.$call->name);
       $this->emitInvocationArguments($b, (array)$call->arguments);
     }
+    */
 
     // Record type
     $this->scope[0]->setType($call, $ptr->hasMethod($call->name) ? $ptr->getMethod($call->name)->returns : TypeName::$VAR);
@@ -633,7 +673,12 @@ class Emitter extends \xp\compiler\emit\Emitter {
    */
   public function emitClassAccess($b, $access) {
     $ptr= $this->resolveType($access->type);
-    $b->append('XPClass::forName(\''.$ptr->name().'\')');
+
+    // new XPClass(self.class)
+    $b->append('new lang/XPClass')->append("\n");
+    $b->append("dup\n");
+    $b->append('ldc_w ')->append($this->javaName($ptr))->append("\n");
+    $b->append('invokenonvirtual lang/XPClass/<init>(Ljava/lang/Class;)V')->append("\n");
 
     // Record type
     $this->scope[0]->setType($access, new TypeName('lang.XPClass'));
@@ -977,6 +1022,9 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     // End
     $b->append('l')->append($if->otherwise->hashCode())->append(":\n");
+
+    $this->labels[]= $if->condition->hashCode();
+    $this->labels[]= $if->otherwise->hashCode();
   }
 
   /**
@@ -1574,6 +1622,37 @@ class Emitter extends \xp\compiler\emit\Emitter {
   }
 
   /**
+   * Emit annotations
+   *
+   * @param   xp.compiler.emit.Buffer b
+   * @param   xp.compiler.ast.AnnotationNode[] annotations
+   */
+  protected function emitAnnotationNodes($b, $annotations) {
+    foreach ($annotations as $annotation) {
+      $b->append('.annotation visible Lunittest/Test;')->append("\n");    // XXX
+      $b->append('.end annotation')->append("\n");
+    }
+  }
+
+  /**
+   * Emit comment
+   *
+   * @param   xp.compiler.emit.Buffer b
+   * @param   string comment
+   */
+  protected function emitComment($b, $comment) {
+    $b->append('.annotation visible Llang/XPClass$Meta;')->append("\n"); 
+    $b->append('comment s = "');
+    $b->append(trim(preg_replace(
+      '/\n\s+\* ?/',
+      '\n',
+      "\n ".substr($comment, 4, strpos($comment, '* @')- 2)))
+    );
+    $b->append("\"\n");
+    $b->append('.end annotation')->append("\n");
+  }
+
+  /**
    * Emit a method
    *
    * @param   xp.compiler.emit.Buffer b
@@ -1611,7 +1690,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
       DETAIL_TARGET_ANNO  => array()
     );
     array_unshift($this->method, $method->name);
-    $this->emitAnnotations($this->metadata[0][1][$method->name], (array)$method->annotations);
+    //$this->emitAnnotations($this->metadata[0][1][$method->name], (array)$method->annotations);
 
 /*
     // Parameters, body
@@ -1632,7 +1711,13 @@ class Emitter extends \xp\compiler\emit\Emitter {
 
     $b->append(".limit stack 6\n");   // XXX
     $b->append(".limit locals 1\n");  // XXX
+
+    $this->emitAnnotationNodes($b, (array)$method->annotations);
+    $this->emitComment($b, $method->comment);
+
     $b->append("\n");
+
+    $this->labels= array();
 
     $this->emitAll($b, $method->body);
 
@@ -1644,6 +1729,14 @@ class Emitter extends \xp\compiler\emit\Emitter {
     array_shift($this->method);
 
     $b->append('return')->append("\n");
+
+    // StackMapFrame
+    $b->append(".stack use locals\n");
+    foreach ($this->labels as $label) {
+      $b->append('stack Uninitialized l')->append($label)->append("\n");
+    }
+    $b->append(".end stack\n");
+
     $b->append('.end method')->append("\n");
     $this->leave();
     
@@ -2280,6 +2373,8 @@ class Emitter extends \xp\compiler\emit\Emitter {
         $i < $s && $b->append(', ');
       }
     }
+
+    $this->emitComment($b, $declaration->comment);
     
     // Members
     $b->append("\n");
@@ -2509,6 +2604,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
    */
   public function emit(ParseTree $tree, Scope $scope) {
     $bytes= new Buffer('', 1);
+    $bytes->append(".bytecode 51.0\n");
     
     array_unshift($this->local, array());
     array_unshift($this->temp, 0);

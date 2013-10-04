@@ -22,4 +22,10 @@ public class TestCase {
 			throw new AssertionFailedError("Expected " + expected + " but was " + actual);
 		}
 	}
+
+	public void assertEquals(Object expected, Object actual) {
+		if (!expected.equals(actual)) {
+			throw new AssertionFailedError("Expected " + expected + " but was " + actual);
+		}
+	}
 }
