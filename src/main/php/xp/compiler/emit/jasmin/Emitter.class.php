@@ -2604,7 +2604,7 @@ class Emitter extends \xp\compiler\emit\Emitter {
    */
   public function emit(ParseTree $tree, Scope $scope) {
     $bytes= new Buffer('', 1);
-    $bytes->append(".bytecode 51.0\n");
+    $bytes->append(".bytecode 50.0\n");
     
     array_unshift($this->local, array());
     array_unshift($this->temp, 0);
